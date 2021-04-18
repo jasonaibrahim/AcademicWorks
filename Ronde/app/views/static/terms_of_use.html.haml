@@ -1,0 +1,27 @@
+%html
+  %head
+    %title rondé
+    = stylesheet_link_tag 'homepage_links'
+    = javascript_include_tag 'about'
+    = csrf_meta_tags
+
+  %body
+    %h1.title rondé
+    #main
+      - if flash[:notice]
+        #notice.message= flash[:notice]
+      - elsif flash[:warning]
+        #warning.message= flash[:warning]
+
+      = yield
+
+  %h2 terms of use
+
+  %p#about <br>rondé terms of use.<br><br>
+
+  %div#bottom_div
+    %table#bottom_links
+      %th{:class => "bottom_link"}= link_to 'Home', '/static/home', :class => "bottom_link", :id => "home_link"
+      %th{:class => "bottom_link"}= link_to 'About', '/static/about', :class => "bottom_link", :id => "about_link"
+      %th{:class => "bottom_link"}= link_to 'Terms of Use', '/static/terms_of_use', :class => "bottom_link", :id => "terms_of_use_link"
+      %th{:class => "bottom_link"}= link_to 'Contact', '/static/contact', :class => "bottom_link", :id => "contact_link"

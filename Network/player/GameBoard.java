@@ -1,0 +1,499 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ *
+ * @author jasontosh
+ */
+package player;
+
+import list.SList;
+
+
+public class GameBoard {
+    protected static final int WHITE = 1;
+    protected static final int BLACK = 0;
+    protected static final int EMPTY = -1;
+    protected int[][] board;
+    protected int wChipCount;
+    protected int bChipCount;
+    
+    /*
+     * Constructs an empty gameboard. Size is 8x8. Number of chips are equal to zero
+     * All cells are initialized to EMPTY (-1)
+     */
+    
+    public GameBoard(){
+        this.board = new int[8][8];
+        for(int j = 0 ; j<= 7; j++){
+            for(int i =0 ; i<= 7; i++){
+                this.board[j][i] = EMPTY;
+            }
+        }
+        this.wChipCount = 0;
+        this.bChipCount = 0;
+    }
+    
+    
+    
+    /*
+     * Returns the number of chips on the board for the given color
+     */
+    
+    public int getChipCount(int color){
+        if (color == WHITE){
+            return this.wChipCount;
+        }
+        else{
+            return this.bChipCount;
+        }
+    }
+    
+    /*
+     * Creates a new board and does the specified move for the given color.
+     * Updates the chip count and returns the new board. If the move is invalid,
+     * throws an InvalidMoveException
+     * 
+     */
+    
+    public GameBoard doMove(Move m, int color) throws InvalidMoveException{
+        if(!isLegal(m,color)){
+            throw new InvalidMoveException();
+        }
+        
+        GameBoard temp = new GameBoard();
+        
+        for(int j = 0; j <= 7; j++){
+            for (int i = 0; i<= 7; i++){
+                temp.board[j][i] = board[j][i];
+            }
+        }
+        temp.bChipCount = this.bChipCount;
+        temp.wChipCount = this.wChipCount;
+        
+        
+        if(m.moveKind == Move.STEP){
+            temp.board[m.x2][m.y2] = EMPTY;
+        }
+        
+        if(m.moveKind == Move.ADD){
+            if(color == BLACK){
+                temp.bChipCount++;
+            }else if(color == WHITE){
+                temp.wChipCount++;
+            }
+        }
+        
+        temp.board[m.x1][m.y1] = color;
+        
+        return temp;
+        
+    }
+    
+    
+    /*
+     * Goes through all of the rules to check for the legality of a given move
+     * Returns false if the move is illegal. True if the move is legal.
+     */
+    
+    public boolean isLegal(Move m, int color){
+        
+        //Holds the value of the number of chips on the board for this player
+        int thisChipCount = (color == WHITE)?(wChipCount):(bChipCount);
+        
+        //Checks if a move is out of bounds, aka not on the gameboard.
+        //If so, returns false.
+        if(outOfBounds(m.x1,m.y1)){
+            return false;
+        }
+        
+        // Checks if the type of move is valid, given the number of chips on the board.
+        // If there are more than 10 chips on the board, then the add move is invalid.
+        // If there are less than 10 chips on the board, then the step move is invalid.
+        if(thisChipCount >= 10 && m.moveKind == Move.ADD){
+            return false;
+        }else if(thisChipCount < 10 && m.moveKind == Move.STEP){
+            return false;
+        }
+        
+        // Begin the check for legality of all moves...
+            
+            // Checks if the x or y values of a certain color lie in the opponents
+            // area of the board. Implicitly checks the corner deadzones also.
+            
+            if( (color == WHITE && (m.y1 == 0 || m.y1 == 7) )){
+                return false;
+            }else if( (color == BLACK && (m.x1 == 0 || m.x1 == 7) )){
+                return false;
+            }
+            
+            //Checks if a cell is vacant, if not returns false --> illegal move
+            if(this.board[m.x1][m.y1] != EMPTY){
+                return false;
+            }
+            
+            
+            
+            //Checks if a move creates a cluster, if it creates a cluster, 
+            //returns false --> illegal move
+            if(wouldCluster(m.x1,m.y1,color)){
+                return false;
+            }
+            
+            //Checks for special cases in STEP moves only...
+            if(m.moveKind == Move.STEP){
+                
+                //Checks to see if the old position is in bounds
+                if(outOfBounds(m.x2,m.y2)){
+                    return false;
+                }
+                
+                //Checks to see if the old position is this players color.
+                if(board[m.x2][m.y2] != color){
+                    return false;
+                }
+                
+                //Checks to see if the new position is equal to the old position.
+                if(m.x1 == m.x2 && m.y1 == m.y2){
+                    return false;
+                }
+            }
+            
+            return true;
+                
+                
+    }
+            
+            
+    /*
+     * Checks if a given coordinate is out of bounds. Returns the boolean value
+     * false if it is not out of bounds, true if it is out of bounds.
+     */
+    public boolean outOfBounds(int x, int y){
+        return (x > 7 || x < 0 || y > 7 || y < 0);
+    }
+    
+    
+    /*
+     * Checks for neighbors by returning the contents of a cell on this gameboard. 
+     * If the coordinate is out of bounds,
+     * returns a zero, essentially the same as an empty cell (no neighbor).
+     */
+    public int safeGet(int x, int y){
+        if(outOfBounds(x,y)){
+            return EMPTY;
+        }
+        else return board[x][y];
+    }
+    
+    /*
+     * Checks to see if a x and y coordinate would create a cluster. Makes calls to
+     * safeGet and hasNeighbor
+     */
+    public boolean wouldCluster(int x,int y,int color){
+        boolean foundNeighbor = false;
+        
+        for(int j=-1; j <= 1; j++){
+            for(int i = -1; i <= 1; i++){
+                
+                if(safeGet(x+j,y+i) == color){
+                    if(hasNeighbor(x+j,y+i,color)){
+                        return true;
+                    }
+                    
+                    if(foundNeighbor){
+                        return true;
+                    }else{
+                        foundNeighbor = true;
+                    }
+                    
+                    
+                }
+            }
+        }
+        return false;
+        
+    }
+    
+    /*
+     * Checks to see if a given x and y coordinate has a neighbor of the same
+     * color in the surrounding cells
+     */
+    public boolean hasNeighbor(int x, int y, int color){
+        
+        return(    (safeGet(x-1,y-1) == color)
+                || (safeGet(x-1,y) == color)
+                || (safeGet(x-1,y+1) == color)
+                || (safeGet(x,y-1) == color)
+                || (safeGet(x,y+1) == color)
+                || (safeGet(x+1,y+1) == color)
+                || (safeGet(x+1,y) == color)
+                || (safeGet(x+1,y-1) == color));
+        }
+    
+     /**
+     * Checks if either player has made a winning network yet...
+     * @param turnColor The color of the player who made the last move.
+     * @return The color of the player who won. If neither has won yet, returns EMPTY.
+     **/
+    public int checkForWinner(int turnColor){
+        if(bChipCount < 6 && wChipCount < 6){ return(EMPTY); }
+        boolean wins[] = new boolean[2];
+        int[][] pieces;
+        int start1, start2, end1, end2;
+        AdjacencyMatrix adj;
+        //Can white have a winning network? If so, check for it.
+        if(wChipCount >= 6){
+            //Enumerate the pieces (index them).
+            pieces = findPieces(WHITE);
+            //Make an adjacency matrix for the pieces.
+            adj = makeAdjacencyMatrix(pieces, WHITE);
+            //Get the starts/ends. (Starts are in the left most column. Ends
+            //are in the right most.)
+            start1 = start2 = end1 = end2 = -1;
+            for(int i = 0;i < pieces.length;i++){
+                if(pieces[i][0] == 0){
+                    if(start1 != -1){
+                        start2 = i;
+                    }else{
+                        start1 = i;
+                    }
+                }else if(pieces[i][0] == 7){
+                    if(end1 != -1){
+                        end2 = i;
+                    }else{
+                        end1 = i;
+                    }
+                }
+            }
+            //If there are no valid starts or ends, don't bother. Otherwise,
+            //let the board check for a valid network.
+            if(start1 != -1 && end1 != -1){
+                wins[0] = adj.networkExists(start1, start2, end1, end2);
+            }else{
+                wins[0] = false;
+            }
+        }else{ wins[0] = false; }
+        //Can black have a winning network? If so, check for it.
+        if(bChipCount >= 6){
+            //Enumerate the pieces (index them).
+            pieces = findPieces(BLACK);
+            //Make an adjacency matrix for the pieces.
+            adj = makeAdjacencyMatrix(pieces, BLACK);
+            //Get the starts/ends. (Starts are in the top most row. Ends
+            //are in the bottom most.)
+            start1 = start2 = end1 = end2 = -1;
+            for(int i = 0;i < pieces.length;i++){
+                if(pieces[i][1] == 0){
+                    if(start1 != -1){
+                        start2 = i;
+                    }else{
+                        start1 = i;
+                    }
+                }else if(pieces[i][1] == 7){
+                    if(end1 != -1){
+                        end2 = i;
+                    }else{
+                        end1 = i;
+                    }
+                }
+            }
+            //If there are no valid starts or ends, don't bother. Otherwise,
+            //let the board check for a valid network.
+            if(start1 != -1 && end1 != -1){
+                wins[1] = adj.networkExists(start1, start2, end1, end2);
+            }else{
+                wins[1] = false;
+            }
+        }else{ wins[1] = false; }
+        //Make wins[0] relate to the last player to move, and wins[1] relate
+        //to the player who is going to move.
+        if(turnColor == BLACK){
+            boolean temp = wins[0];
+            wins[0] = wins[1];
+            wins[1] = temp;
+        }
+        //Figure out who won.
+        if(wins[1]){
+            return((turnColor == WHITE)?(BLACK):(WHITE));
+        }else if(wins[0]){
+            return(turnColor);
+        }else{
+            return(EMPTY);
+        }
+    }
+
+    /**
+     * Returns an array of the positions of the pieces that belong to a
+     * particular color.
+     * @param color The color of the player.
+     * @return An array of points corresponding to the player's pieces.
+     *         The second index represents the point, the third represents the
+     *         x-coordinate (0) or the y-coordinate (1). If no pieces are on the
+     *         board, returns null.
+     **/
+    private int[][] findPieces(int color){
+        int chipCount = (color == BLACK)?(bChipCount):(wChipCount);
+        if(chipCount == 0){ return null; }
+        int[][] ret = new int[chipCount][2];
+        int curIndex = 0;
+        //Cycle through all the board positions, recording the positions of
+        //any pieces of the correct color.
+        for(int y = 0;y < 8; y++){
+            for(int x = 0;x < 8; x++){
+                if(board[x][y] == color){
+                    ret[curIndex][0] = x;
+                    ret[curIndex][1] = y;
+                    curIndex++;
+                }
+            }
+        }
+        if(curIndex != chipCount){ /*Raise Hell? */ }
+        return(ret);
+    }
+
+    /**
+     * Returns an adjacency matrix given various piece positions.
+     * @param pieces The pieces to focus on. The first dimension refers to the
+     *               piece's index, and the second to the x-coordinate (0) vs
+     *               y-coordinate (1).
+     * @param color The color of the player to whom the pieces belong.
+     * @return An adjacency matrix containing the relationships between the
+     *         given pieces.
+     **/
+    private AdjacencyMatrix makeAdjacencyMatrix(int[][] pieces, int color){
+        AdjacencyMatrix ret = new AdjacencyMatrix(pieces.length);
+        int direction, otherIndex;
+        int[] pos;
+        //Cycle through all the pieces (by index) and find what they connect to.
+        for(int i = 0;i < pieces.length;i++){
+            //Cycle through all possible directions.
+            for(int dir = 0;dir < AdjacencyMatrix.DIRECTION_LENGTH;dir++){
+                direction = AdjacencyMatrix.DIRECTIONS[dir];
+                pos = castRay(pieces[i][0], pieces[i][1],
+                              AdjacencyMatrix.DIRECTION_MOVE[direction][0],
+                              AdjacencyMatrix.DIRECTION_MOVE[direction][1]);
+                //If something was found and it was of the same color, then
+                //we've found a connection.
+                if(pos != null && board[pos[0]][pos[1]] == color){
+                    //Find the otherIndex.
+                    for(otherIndex = 0;otherIndex < pieces.length;otherIndex++){
+                        if(pieces[otherIndex][0] == pos[0]
+                        && pieces[otherIndex][1] == pos[1]){
+                            break;
+                        }
+                    }
+                    //Connect them.
+                    ret.addConnection(i, otherIndex, direction);
+                }
+            }
+        }
+        return(ret);
+    }
+
+    /**
+     * Returns the position of the first nonEMPTY piece found following a direction away from a point.
+     * This ignores the first position (that given by (x, y)).
+     * If there isn't anything on the "path" it returns null.
+     * @param x The x position to start at.
+     * @param y The y position to start at.
+     * @param dx The x component of direction (must be -1 <= dx <= 1).
+     * @param dy The y component of direction (must be -1 <= dy <= 1).
+     * @return The position of the first nonEMPTY piece (as an array) or null (if there is no piece).
+     *         Index 0 of the array is the x coordinate. Index 1 is the y coordinate.
+     **/
+    private int[] castRay(int x, int y, int dx, int dy){
+        int[] ret = null;
+        x += dx; y += dy;//Skip the given position.
+        //While in bounds check for a non-empty piece. If it exists, return it.
+        while(!outOfBounds(x, y)){
+            if(board[x][y] != EMPTY){
+                ret = new int[2];
+                ret[0] = x;
+                ret[1] = y;
+                break;
+            }
+            x += dx; y += dy;
+        }
+        //Otherwise return null.
+        return(ret);
+    }
+    
+
+    
+    /*
+     * returns a list of all the legal moves for a given color on this board.
+     */
+    
+     public SList getLegalMoves(int color){
+
+    	SList legalSpaces = new SList();
+    	int chipCount = (color == BLACK)?(bChipCount):(wChipCount);
+        int xFirst = (color == WHITE)?(0):(1);
+        int width  = (color == WHITE)?(7):(6);
+        int yFirst = (color == WHITE)?(1):(0);
+        int height = (color == WHITE)?(6):(7);
+        int[][] places = findPieces(color);
+
+        for (int j = xFirst; j <= width; j ++){
+            for (int i = yFirst; i <= height; i++){
+                if (this.board[j][i] == EMPTY){
+                    if(chipCount <10){
+                        Move x = new Move(j,i);
+                        if(isLegal(x, color)){
+                            legalSpaces.insertEnd(x);
+                        }
+                    }else{
+                        for(int a = 0; a <10; a++){
+                            int z = places[a][0];
+                            int y = places[a][1];
+                            Move w = new Move(j, i, z, y);
+                            if(isLegal(w, color)){
+                                legalSpaces.insertEnd(w);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return legalSpaces;
+    }
+
+    /**
+     * Prints out the board in a human readable way.
+     * White are 'O's, Black are 'X's, and empty space is '-'.
+     * For debugging fun!
+     **/
+    public String toString(){
+        //Write the column numbers (x-coordinates).
+        String ret = "    0 1 2 3 4 5 6 7\n";
+        //Write the content of the board.
+        for(int y = 0;y < 8;y++){
+            ret += y+" [";
+            for(int x = 0;x < 8;x++){
+                switch(board[x][y]){
+                case WHITE:
+                    ret += " o";
+                    break;
+                case BLACK:
+                    ret += " x";
+                    break;
+                default://EMPTY!
+                    ret += " -";
+                    break;
+                }
+            }
+            ret += " ]\n";
+        }
+        return(ret);
+    }
+}
+
+
+
+
+
+        

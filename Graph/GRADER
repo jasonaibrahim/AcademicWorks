@@ -1,0 +1,14 @@
+So basically, we use arrays, DLists, SLists, and Disjoint Sets for our data structures.
+In WUGraph we had a vertex hash table, a vertex DList, an edge hash table, an edge DList and fields for the number of vertices and the number of edges.
+
+Each hashtable's index stored a reference to an entry object that stored a reference to the object passed in and a reference to the specific node in the vertex or edge list, respectively. Each node in one of these respective lists stored a reference to a Vertex or Edge object. Each Vertex or Edge object contained mulitple references also.
+
+Vertex objects contained references to the object passed in, its own edge list, a reference to its node in the Vertex List.
+
+Edge objects contained references to the first Vertex object, the second Vertex object, a reference to the node in each vertex's Edge list, a reference to the graph's Edge List and a field for the weight.
+
+Basically everything that formed the structure of the Graph was taken from Goodrich and Tammassia. 
+
+To make removeVertex run in O(d) time, we used multiple calls to removeEdge(), which runs in O(1) time, so the total running time is linear in the number of edges a vertex has. This is equivalent to O(d) time.
+
+To make getVertices() run O(V) time, we simply went through the vertex list and put each vertex in the array. This runs in time proportional to the number of vertices in the list, so this is always O(v) time, since removeVertex() also deletes a vertex from this list when a vertex is removed.

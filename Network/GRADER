@@ -1,0 +1,199 @@
+                                     GRADER
+
+Name of student running submit: Jason Ibrahim
+Login of student running submit: hj
+
+Second team member's name: Aaron Beal
+Second team member's login: ss
+
+Third team member's name (if any): Diana Jeon
+Third team member's login: vq
+
+IMPORTANT:  Once you've submitted Project 2 once, the same team member should
+submit always.  If a different teammate must submit, inform cs61b@cory.eecs of
+all the details.  Include a complete list of team members, and let us know
+which submission you want graded.
+
+If you've submitted your project once, or even written a substantial amount of
+code together, you may not change partners without the permission of the
+instructor.
+===============================================================================
+Does your program compile without errors?
+-Yes
+
+
+Have you tested your program on the machines in the Soda CS 61B lab?
+-Yes
+
+
+Did you successfully implement game tree search?  Did you successfully
+implement alpha-beta pruning?  Are there any limitations on it?  What is the
+default number of search levels set by the one-parameter MachinePlayer
+constructor?
+
+-Yes and yes. Limitations are the amount of time a search takes when searching 3 or more levels deep. Alpha beta pruning speeds it up a little but the load is still quite large.
+
+
+Describe your board evaluation function in some detail.
+
+-A board is split up into two rankings. A ranking for white pieces and a ranking for black pieces. Each ranking starts at thirty which signifies a perfect board. Tests are run that decrement or increment
+points to this ranking. Some examples include, but are not limited to, limiting the number of pieces in any column or row, maximizing the number of connections each piece has, and searching for deep networks.
+Once a ranking has been determined, the rank is subject to the function (1-e^(-rank/20)). This is so that the score for a perfect board is always 1 and any imperfect board receives a score asymptotically approaching 1. If the white score
+is greater than the black score then the white score is returned, if the move is made by a white player, otherwise, the negative of the black score is returned and vice versa.
+
+
+Does your MachinePlayer use any special method of choosing the first few moves?
+
+MachinePlayer wants to win in the fewest moves possible, so the first few moves attempt to arrange the board in such a way
+that makes this possible. MachinePlayer can win in as few as six moves.
+
+
+Is there anything else the graders should know to help them read your project?
+
+
+
+Describe the classes, modules, and interfaces you designed before and while you
+implemented the project.  Your description should include:
+  -  A list of the classes your program uses.
+  -  A list of each of the "modules" used in or by MachinePlayer, similar to
+     the list in the "Teamwork" section of the README (but hopefully more
+     detailed).
+  -  For each module, list the class(es) the module is implemented in.
+  -  For each module, say which of your team members implemented it.
+  -  For each module, describe its interface--specifically, the prototype and
+     behavior of each method that is available for external callers (outside
+     the module) to call.  Don't include methods that are only meant to be
+     called from within the module.
+
+     For each method, provide (1) a method prototype and (2) a complete,
+     unambiguous description of the behavior of the method/module.  This
+     description should also appear before the method in your code's comments.
+
+You will probably need to change some of your design decisions as you go; be
+sure to modify this file to reflect these changes before you submit your
+project.  Your design of classes and interfaces with be worth about 10% of your
+grade.
+
+List of Classes:
+-GameBoard
+-Analysis
+-MachinePlayer
+-AdjacencyMatrix
+-InvalidMoveException
+-Point
+
+List of Modules:
+
+-Determining Whether a Move is Valid
+    Methods:
+	+getLegalMoves(); 
+	+isLegal();
+
+    Author: Diana Jeon; Jason Ibrahim, Aaron Beal, Diana Jeon
+
+    Prototypes:
+	+public Move[] getLegalMoves(int color);
+	+public boolean isLegal(Move m, int color)
+
+    Classes:
+	+GameBoard
+
+    Descriptions:
+	+getLegalMoves returns all possible legal moves for "this" game board
+	+isLegal checks whether the given move is valid for "this" board, returns true if valid, false if not.
+
+-Finding the chips that form connections
+    Methods:
+	+checkForWinner();
+	+findConnections();
+
+    Author: Aaron Beal; Jason Ibrahim
+
+    Prototypes:
+	+public int checkForWinner(int turnColor);
+
+    Classes:
+	+GameBoard
+
+    Descriptions:
+	+checkForWinner checks to see if either player has made a winning network yet.
+	+findConnections finds the connections each chip has to another chip.
+
+-Computing an evaluation function
+    Methods:
+	+scoreMove();
+	+scoreBoard();
+	+findConnections();
+
+    Author: Aaron Beal; Jason Ibrahim
+
+    Prototypes:
+	+public float scoreMoves(GameBoard gb, int side, float alpha, float beta, int depth)
+	+public float scoreBoard(GameBoard board, int color)
+
+    Classes:
+	+Analysis
+	+MachinePlayer
+
+    Descriptions:
+	+scoreMove() uses scoreBoard() to score a move and then utilizes alpha beta tree search to return the move with the best score to chooseMove()
+	+scoreBoard will take in a board and run tests to determine that boards score. Will score a "white" board and a "black" board, and depending on 
+	 which color is given, will return either the whiteScore or the blackScore subject to a scoring function.
+
+-Minimax Tree Search
+    Methods:
+	+scoreMove();
+	+scoreBoard();
+	+doMove();
+	+getLegalMoves();
+	+checkForWinner();
+
+    Author: Aaron Beal; Jason Ibrahim; Aaron Beal, Jason Ibrahim, Diana Jeon; Diana Jeon; Aaron Beal;
+
+    Prototypes:
+	+public GameBoard doMove(Move m, int color)
+	//All other prototypes can be found in above descriptions.
+
+    Classes:
+	+Analysis
+	+GameBoard
+	+MachinePlayer
+
+    Descriptions:
+	+doMove() checks if a given move is legal. if it is, returns a new game board with given move. if it is not a legal move, throws a InvalidMove exception. 
+	+scoreMove() is used by chooseMove to score the board and search down as many levels deep as specified to find the board with the best (or worst) score.
+	+getLegalMoves() is used to generate the moves that scoreMove will consider
+	+scoreBoard() will take in a board and return a score for that board subject to an evaluation function.
+	+checkForWinner() will determine if a player has a winning network. 
+
+GameBoard Data Structure Module:
+
+	Classes:
+	+GameBoard
+	+AdjacencyMatrix
+	
+	Author: Jason Ibrahim, Diana Jeon, Aaron Beal; Aaron Beal.
+
+	Methods:
+	+makeAdjacencyMatrix()
+	+doMove()
+
+	Prototypes:
+	private AdjacencyMatrix(int[][] pieces, int color)
+
+	Description:
+	-The GameBoard class stores a 2 dimensional array of size 8x8, and creates a new board for each move. Each time doMove is called, the old board is copied over 
+	 along with the new move to a new board and the new board is returned.
+	-makeAdjacencyMatrix() constructs a new adjacency matrix for this board. This adjacency matrix is used to
+	 check for connections and find the winner.
+
+
+
+
+
+
+
+
+
+
+
